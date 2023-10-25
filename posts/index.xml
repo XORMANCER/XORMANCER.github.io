@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>./posts on The Shellcoders Grimoire</title>
+    <link>https://xormancer.github.io/posts/</link>
+    <description>Recent content in ./posts on The Shellcoders Grimoire</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en</language>
+    <copyright>© [XORMANCER](https://xormancer.github.io/) (Everett Platt)</copyright>
+    <lastBuildDate>Sun, 01 Oct 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://xormancer.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+  </channel>
+</rss>

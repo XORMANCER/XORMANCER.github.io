@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head><title>Necromancer1 &ndash; The Shellcoders Grimoire</title>
+<meta name="description" content="The eldritch tomb breathes as you unseal its ancient bindings, forgotten curses searing your mind as you ingest its forbidden knowledge.">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8"/>
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css" integrity="sha512-1sCRPdkRXhBV2PBLUdRb4tMg1w2YPf37qatUFeS7zlBy7jJI8Lf4VHwWfZZfpXtYSLy85pkm9GaYVYMfw5BC1A==" crossorigin="anonymous" />
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/academicons/1.9.1/css/academicons.min.css" integrity="sha512-b1ASx0WHgVFL5ZQhTgiPWX+68KjS38Jk87jg7pe+qC7q9YkEtFq0z7xCglv7qGIs/68d3mAp+StfC8WKC5SSAg==" crossorigin="anonymous" />
+
+
+<link rel="stylesheet" href="https://xormancer.github.io/css/palettes/dark.css">
+<link rel="stylesheet" href="https://xormancer.github.io/css/risotto.css">
+<link rel="stylesheet" href="https://xormancer.github.io/css/custom.css">
+
+
+<link rel="icon" href="https://xormancer.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="https://xormancer.github.io/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="https://xormancer.github.io/favicon-16x16.png">
+<link rel="apple-touch-icon" href="https://xormancer.github.io/apple-touch-icon.png">
+<link rel="manifest" href="https://xormancer.github.io/site.webmanifest">
+</head>
+
+    <body>
+        <div class="page">
+
+            <header class="page__header"><nav class="page__nav main-nav">
+    <ul>
+    <h1 class="page__logo"><a href="https://xormancer.github.io/" class="page__logo-inner">The Shellcoders Grimoire</a></h1>
+    
+    
+    <li class="main-nav__item"><a class="nav-main-item" href="https://xormancer.github.io/posts/" title="">Posts</a></li>
+    
+    <li class="main-nav__item"><a class="nav-main-item" href="https://xormancer.github.io/series/" title="">Series</a></li>
+    
+    <li class="main-nav__item"><a class="nav-main-item" href="https://xormancer.github.io/whoami/" title="">Whoami</a></li>
+    
+    </ul>
+</nav>
+
+</header>
+
+            <section class="page__body">
+    <h1 id="necromancer1">Necromancer1</h1>
+
+    <hr>
+<blockquote>
+<p><strong>Necromancer1</strong> is a machine with an obsession for cryptic paragraphs and unorthodox ports, can we figure out how to defeat the Necromancer?`</p>
+</blockquote>
+<p><em>This post is a part of the <a href="/series/vulnhub/">vulnhub</a> series!</em></p>
+<h2 id="locating-the-necromancer">Locating the necromancer</h2>
+<hr>
+<p>The first step is to determine the target machines IP address within our network. While I would typically utilize something such as nmap or netdiscover during this step, this particular machine <em>appeared</em> to have no open ports at first glance.</p>
+<p>I instead opted to leave an instance of <strong>wireshark</strong> open, waiting to capture a DHCP request sent by the necromancer across the network as noted within the Necromancer vulnhub page.</p>
+<p><img src="images/1_find_ip.png" alt="Finding the IP"></p>
+<h2 id="digging-deeper">Digging deeper</h2>
+<hr>
+<p>After taking note of the devices IP address, I attempted various flavors of reconnaissance against the machine. After having little success, I decided to take a break while leaving wireshark open as a &ldquo;Hail Mary&rdquo;.</p>
+<p><img src="images/2_weird_tcp.png" alt="Odd TCP Stream"></p>
+<p>Upon return, I quickly noticed an odd TCP request against port <strong>4444</strong> targeting my machine. After confirming that it did not originate from somewhere else within the network I spun up an instance of <strong>netcat</strong> to catch the incoming request.</p>
+<div class="highlight"><pre tabindex="0" style="color:#ebdbb2;background-color:#282828;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>netcat -lvnp <span style="color:#d3869b">4444</span> <span style="color:#928374;font-style:italic">## Starts a reverse listener on port 4444</span>
+</span></span></code></pre></div><h2 id="chant-but-mind-your-tongue">Chant (but mind your tongue)</h2>
+<hr>
+<p><img src="images/3_weird_data.png" alt="Incoming Request"></p>
+<p>The string we received was clearly encoded in some format or another. Lets attempt to decode it utilizing <strong>base64</strong>, as the string hints at being encoded in this standard.</p>
+<div class="highlight"><pre tabindex="0" style="color:#ebdbb2;background-color:#282828;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>base64 -d <span style="color:#928374;font-style:italic">## Decodes base64 data </span>
+</span></span></code></pre></div><p><img src="images/4_decrypted_data.png" alt="Decrypted Base64"></p>
+<p>Inside of the extremely cryptic message we&rsquo;ve received from our netcat listener, we are instructed to <em>chant</em> the string of our received flag to <strong>u666</strong>.</p>
+<p>Other than this being a nod to the occult (which we love here), the <strong>u</strong> may in fact be a clue to send this received flag over the port 666 using <strong>UDP</strong>. We will utilize <strong>netcat</strong> to send our data via echo, with the appropriate -u flag.</p>
+<div class="highlight"><pre tabindex="0" style="color:#ebdbb2;background-color:#282828;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#fabd2f">echo</span> -n <span style="color:#b8bb26">&#39;flag_here&#39;</span> | nc -u &lt;ip&gt; &lt;port&gt; <span style="color:#928374;font-style:italic">## Echos a string into a given port</span>
+</span></span></code></pre></div><p>After attempting to send the flags string directly to port 666, we get a message indicating that our &ldquo;chant&rdquo; is in the wrong tongue.</p>
+<p>Due to this box having the tendency to encrypt everything, I went ahead and sent it over to crackstation in order to <em>hopefully</em> return a decrypted string.</p>
+<p><img src="images/5_decrypt_flag.png" alt="Decrypted Base64"></p>
+<p>Awesome! Now that we have the correct tongue for our chant, we can again attempt a connection to the machine.</p>
+<h2 id="the-crows-beckon-to-port-80">The crows beckon (to port 80?)</h2>
+<hr>
+<p><img src="images/6_flag_2.png" alt="Decrypted Base64"></p>
+<p>80&hellip; FINALLY! We now have a normal port we can investigate! After noting down the new flag, I went ahead and pulled up a web browser and navigated to the machines HTTP server.</p>
+<p><img src="images/7_port_80.png" alt="Decrypted Base64"></p>
+<p>Other than the text describing more of our adventure, there is not much here. I poked around for a while, but ended up deciding to take a deeper look into the included image file.</p>
+<p><img src="images/8_odd_picture.png" alt="Decrypted Base64"></p>
+<p>In addition to the magic bytes clearly indicating that this is not a normal picture, we are able to see the presence of a .txt file hidden within by utilizing the strings command.</p>
+<p>Knowing this, I quickly tried a few methods of data extraction before successfully gaining access to the file.</p>
+<p><img src="images/9_decrypting_image.png" alt="Decrypted Base64"></p>
+<p>Our newly extracted file contains another base64 encoded string, with its contents hinting at a new path within our web server to visit: <strong>/amagicbridgeappearsatthechasm</strong></p>
+<p><img src="images/10_chasm.png" alt="Decrypted Base64"></p>
+<h2 id="its-dangerous-to-go-alone">Its dangerous to go alone..</h2>
+<hr>
+<p>This step actually had me stumped for quite a while. While my initial intuition of directory busting was in fact correct, I was not utilizing a wordlist that aligned with the instructions presented to us on the new directory. By trial and error, and utilizing the tool <strong>cewl</strong> to generate a custom wordlist, I was able to generate a wordlist of magical items to feed into dirb.</p>
+<div class="highlight"><pre tabindex="0" style="color:#ebdbb2;background-color:#282828;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>cewl <span style="color:#b8bb26">&#34;https://en.wikipedia.org/wiki/Magic_item_(Dungeons_%26_Dragons)#Major_artifacts&#34;</span> -d <span style="color:#d3869b">1</span> -w wordlists.txt <span style="color:#928374;font-style:italic">## Creates a custom wordlist from a given url</span>
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#ebdbb2;background-color:#282828;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>dirb &lt;url&gt; &lt;wordlist&gt; <span style="color:#928374;font-style:italic">## Bruteforce directories on a given url</span>
+</span></span></code></pre></div><p><img src="images/11_dirb.png" alt="Decrypted Base64"></p>
+<p>With our newly discovered artifact (<strong>talisman</strong>), we are able to venture deeper into the chasm ahead.</p>
+<h2 id="into-the-chasm-we-go">Into the chasm we go</h2>
+<hr>
+<p>After visiting our newly discovered directory, we are presented with a binary executable.</p>
+<p>A quick glance using strings notes some exposed function names, indicating that we may be able to bypass a check within the function that looks for a proper input before continuing. I quickly loaded up gdb and took a look at its internal functions.</p>
+<p><img src="images/12_talisman.png" alt="Decrypted Base64"></p>
+<p>After noticing the function &ldquo;chantToBreakSpell&rdquo; following the wearTalisman function, I determined that a <strong>jmp</strong> operation after setting a breakpoint at our &ldquo;wearTalisman&rdquo; function could exploit the binary.</p>
+<p><img src="images/13_talisman_chant.png" alt="Decrypted Base64"></p>
+<p>Success! It seems to be another md5 encoded string, so another visit to crackstation reveals to us our next flag to chant (<strong>blackmagic</strong>). This time we will chant to the UDP port <strong>31337</strong> as noted within our talisman program.</p>
+<h2 id="black-magic-at-work">Black magic at work</h2>
+<hr>
+<p>After echoing our flag into our newly discovered port, we are met with the continuance of our storyline coupled with a new directory: <strong>/thenecromancerwillabsorbyoursoul</strong></p>
+<p>Upon vising the directory, we are met with the most horrifying sight in recent history. <strong>Its the necromancer!</strong></p>
+<p><img src="images/14_terrifying.png" alt="Decrypted Base64"></p>
+<p><em>Terrifying huh&hellip;</em></p>
+<p>Anyway, at the very end of the site we are casually informed of the port u161. There is also a hyperlink for the word &ldquo;necromancer&rdquo;, which upon visit begins another download.</p>
+<p>I quickly extracted this file using tar, leading us to a <strong>.cap</strong> file. Time for some network analysis!</p>
+<div class="highlight"><pre tabindex="0" style="color:#ebdbb2;background-color:#282828;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>tar -xvf necromancer
+</span></span></code></pre></div><h2 id="wireless-exploitation-in-a-ctf">Wireless exploitation, in a CTF?</h2>
+<hr>
+<p>This is probably the only time my day job has been explicitly useful in solving a vulnhub machine. Upon first inspection of the file, its clear that this is a capture of a de-authentication attack being performed against a client. We can now utilize aircrack-ng in order to break this eapol capture, granting us a possible password.</p>
+<p><img src="images/15_cap.png" alt="Decrypted Base64"></p>
+<div class="highlight"><pre tabindex="0" style="color:#ebdbb2;background-color:#282828;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>aircrack-ng -w &lt;wordlist&gt; &lt;capture_file&gt;
+</span></span></code></pre></div><p><img src="images/16_aircrack.png" alt="Decrypted Base64"></p>
+<p>After cycling through the rockyou dictionary for a bit, we are presented with our password (<strong>death2all</strong>).</p>
+<h2 id="who-needs-a-key-when-i-have-rw">Who needs a key when I have R/W</h2>
+<hr>
+<p>Keeping our new password/string in our pocket, I decided to chant into port u161 as we had done with the previous steps. After having no results, both with chants and without, I decided to throw on the verbose flag and simply connect to the machine over port 161.</p>
+<p><em>Sometimes its the simplest of things.</em></p>
+<p>Well, I got a little wrapped up in the story and forgot that 161 <strong>is normally SNMP</strong>. Since we had a string already (<strong>death2all</strong>), I decided to try and exploit the protocol using community strings.</p>
+<div class="highlight"><pre tabindex="0" style="color:#ebdbb2;background-color:#282828;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>snmpwalk -v 2c -c death2all &lt;IP&gt;
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#ebdbb2;background-color:#282828;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>snmpset -v 2c -c death2allrw &lt;IP&gt; iso.3.6.1.2.1.1.6.0 s <span style="color:#b8bb26">&#34;Unlocked&#34;</span>
+</span></span></code></pre></div><p>As shown in the picture below, it was as simple as using the read/write community string given by the necromancer to modify a specific string from &ldquo;Locked&rdquo; to &ldquo;Unlocked&rdquo;. Sweet!</p>
+<p><img src="images/17_smnp.png" alt="Decrypted Base64"></p>
+<p>We are given another md5 hash to crack (thank you again, crackstation), alongside the hint t22.</p>
+<p>Upon being given the string <strong>demonslayer</strong> alongside our hint of 22, I am going to assume that we have discovered the necromancers ssh username. Time to brute-force for some credz!</p>
+<h2 id="sneaking-into-his-lair-ssh">Sneaking into his lair (ssh)</h2>
+<hr>
+<p>As with most things in pentesting, there are multiple tools to accomplish this task. For this example, I will be utilizing THC hydra to attempt to brute-force into the ssh protocol.</p>
+<div class="highlight"><pre tabindex="0" style="color:#ebdbb2;background-color:#282828;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>hydra -l demonslayer -P /usr/share/wordlists/rockyou.txt -t <span style="color:#d3869b">4</span> -V &lt;IP&gt; ssh
+</span></span></code></pre></div><p><img src="images/18_hydra.png" alt="Decrypted Base64"></p>
+<p>Hydra returns us the correct password pretty quickly, that being <strong>12345678</strong>. Lets login to the box and take a look around the necromancers lair.</p>
+<div class="highlight"><pre tabindex="0" style="color:#ebdbb2;background-color:#282828;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>ssh demonslayer@&lt;IP&gt;
+</span></span></code></pre></div><p>After looking around and checking <code>sudo -l</code> (<em>only for the box to ask me if I&rsquo;m on drugs</em>), I noticed the next flag and attempted to remotely connect to the mentioned port. After no success, I attempted to connect locally on the machine only to find that&hellip;</p>
+<p><img src="images/19_combat.png" alt="Decrypted Base64"></p>
+<p><em>&hellip;I am now in combat???</em></p>
+<p>Having no idea what to do here, I quickly googled the quote(s) presented in order to provide the correct answer(s) and avoid certain death!</p>
+<pre tabindex="0"><code>Where do the Black Robes practice magic of the Greater Path? Kelewan
+</code></pre><pre tabindex="0"><code>Who did Johann Faust VIII make a deal with? Mephistopheles
+</code></pre><pre tabindex="0"><code>Who is tricked into passing the Ninth Gate? Hedge
+</code></pre><p><img src="images/20_google_mastermind.png" alt="Decrypted Base64"></p>
+<p>Afterwards we are left with another cryptic message hinting towards the existence of a small vile. Some quick reconnaissance around the machine led me to locating the <code>.smallvile</code> file.</p>
+<div class="highlight"><pre tabindex="0" style="color:#ebdbb2;background-color:#282828;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>locate smallvile
+</span></span></code></pre></div><p><img src="images/21_drink.png" alt="Decrypted Base64"></p>
+<p>At first I had assumed that we had obtained sudo , only for <code>sudo su</code>  to throw an error message. This message, <em>however</em>, was different than my previous message.</p>
+<p>Knowing some permissions had to have been modified, I tried a last ditch effort to reach the flag. By fishing for its existence within the root directory, utilizing the previously established naming convention, I was able to read the contents of the final flag.</p>
+<div class="highlight"><pre tabindex="0" style="color:#ebdbb2;background-color:#282828;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>cat /root/flag11.txt
+</span></span></code></pre></div><p><img src="images/22_victory.png" alt="Decrypted Base64"></p>
+<p>At last&hellip; <em><strong>victory</strong></em>.</p>
+<h2 id="references">References</h2>
+<hr>
+<p><a href="https://crackstation.net/">https://crackstation.net/</a></p>
+<p><a href="https://en.wikipedia.org/wiki/Empire_Trilogy">https://en.wikipedia.org/wiki/Empire_Trilogy</a></p>
+<p><a href="https://stackoverflow.com/questions/37389178/send-string-over-netcat-connection">https://stackoverflow.com/questions/37389178/send-string-over-netcat-connection</a></p>
+
+
+    <ul>
+    
+    </ul>
+
+
+            </section>
+
+            <section class="page__aside">
+                <div class="aside__about">
+<div class="aside__about">
+    
+<h1 class="about__title">XORMANCER</h1>
+<p class="about__description">The eldritch tomb breathes as you unseal its ancient bindings, forgotten curses searing your mind as you ingest its forbidden knowledge.</p>
+</div>
+
+
+<ul class="aside__social-links">
+    
+    <li>
+        <a href="https://github.com/XORMANCER" rel="me" aria-label="GitHub" title="GitHub"><i class="fa-brands fa-github" aria-hidden="true"></i></a>&nbsp;
+    </li>
+    
+    <li>
+        <a href="https://twitter.com/XORMANCER" rel="me" aria-label="Twitter" title="Twitter"><i class="fa-brands fa-twitter" aria-hidden="true"></i></a>&nbsp;
+    </li>
+    
+    <li>
+        <a href="https://www.linkedin.com/in/ev-platt-iii/" rel="me" aria-label="Linkden" title="Linkden"><i class="fa-brands fa-linkedin" aria-hidden="true"></i></a>&nbsp;
+    </li>
+    
+</ul>
+</div>
+                <hr>
+                <div class="aside__content">
+    
+
+                </div>
+            </section>
+
+            <footer class="page__footer"><p>
+    
+    
+    
+    
+    
+    
+      
+    
+      
+    
+      
+    
+    
+    
+</p>
+<br /><br />
+<p class="copyright">© <a href="https://xormancer.github.io/">XORMANCER</a> (Everett Platt)</p>
+<p class="advertisement">Powered by <a href="https://gohugo.io/">hugo</a> and <a href="https://github.com/joeroe/risotto">risotto</a>.</p>
+</footer>
+
+        </div>
+    </body>
+
+</html>

