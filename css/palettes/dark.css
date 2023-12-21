@@ -1,22 +1,20 @@
-/* Gruvbox dark, hard by Dawid Kurek (dawikur@gmail.com), morhetz (https://github.com/morhetz/gruvbox) */
+/* Ayu Dark by Khue Nguyen <Z5483Y@gmail.com> */
 
 :root {
-  --base00: #1d2021;
-  --base01: #282828;
-  --base02: #1d2021;
-  --base03: #665c54;
-  --base04: #bdae93;
-  --base05: #d5c4a1;
-  --base06: #ebdbb2;
-  --base07: #fbf1c7;
-  --base08: #fb4934;
-  --base09: #fe8019;
-  --base0A: #d3869b;
-  
-  --base0B: #b8bb26;
-  --base0C: #fe8019;
-  --base0D: #fabd2f;
-  --base0E: #83a598;
-  
-  --base0F: #d65d0e;
+  --base00: #0F1419;
+  --base01: #131721;
+  --base02: #0F1419;
+  --base03: #3E4B59;
+  --base04: #BFBDB6;
+  --base05: #E6E1CF;
+  --base06: #E6E1CF;
+  --base07: #F3F4F5;
+  --base08: #F07178;
+  --base09: #FF8F40;
+  --base0A: #FFB454;
+  --base0B: #D2A6FF;
+  --base0C: #95E6CB;
+  --base0D: #59C2FF;
+  --base0E: #D2A6FF;
+  --base0F: #E6B673;
 }
